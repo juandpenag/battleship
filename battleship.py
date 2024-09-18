@@ -1,19 +1,3 @@
-"""
-    Coordinates cannot be the same 
-    Add attack record 
-    Add attack_coordinates into Player class
-    Add random input to machine 
-    If HIT, attack again
-    Review raised errors 
-    Check coordinates input
-    Consider if self.sunk is necessary
-    Move ship status checking to Gameboard, and clarify the __bool__ method.
-    Refactor attack to avoid recursion.
-    Additionally, streamline the input_ships validation process.
-Beauty up the output in terminal
-    Simplify the game loop and remove the redundant stage variable.
-    Create a class function in Player to receive coordinates
-"""
 
 import random
 
@@ -48,7 +32,7 @@ class Gameboard():
     def __str__(self):
         own_grid = [self.own_grid[i] for i in range(len(self.own_grid))]
         opp_grid = [self.opp_grid[i] for i in range(len(self.opp_grid))]
-        return (own_grid, opp_grid) ###
+        return (own_grid, opp_grid) 
     def place_ship(self, ship):
         for x, y in ship.coordinates:
             if not (0 <= x < 10 and 0 <= y < 10):
@@ -94,7 +78,11 @@ class Player():
          for ship in [Two_Long, Three_Long, Three_Long, Four_Long, Five_Long]:
             print(f"Placing {ship.__name__}:")
             x, y = self.get_coordinate()
-            orientation = random.randint(0,1) if self.player else int(input("Enter orientation (0 for horizontal, 1 for vertical): "))
+            while True:
+                orientation = random.randint(0,1) if self.player else int(input("Enter orientation (0 for horizontal, 1 for vertical): "))
+                if orientation in [0, 1]:
+                    break
+                else: print("Invalid orientation value. Try again.")
             delta_x, delta_y = (1, 0) if orientation == 0 else (0, 1)
             coordinates = [(x + i * delta_x, y + i * delta_y) for i in range(ship.length)]
 
@@ -132,32 +120,43 @@ class Player():
         if all(ship.sunk for ship in self.ships): return False
         else: return True
 
-
-
 def main():
-    user = Player()
-    machine = Player(1)
+    print("This is BATTLESHIP! recreated in Python.")
+    user, machine = Player(), Player(1)
 
     user.input_ships()
     machine.input_ships()
 
-    while user and machine :
-        inning = 1
-        while user and machine:
-            if inning % 2 != 0:  # User's turn
-                result = user.attack(machine, user.attack_coordinates())
-                if result != "HIT":
-                    inning += 1
-            else:  # Machine's turn
-                result = machine.attack(user, machine.attack_coordinates())
-                if result != "HIT":
-                    inning += 1
+    inning = 1
+    round = 1
+    while user and machine:
+        print(f"Round {round}")
+        if inning % 2 != 0:
+            own_grid, opp_grid = str(user.grid)
+            print(f"Your battlefield:")
+            print(own_grid)
+            print(f"Enemy's battlefield")
+            print(opp_grid)
 
-
+            print("Attack!")
+            result = user.attack(machine, user.attack_coordinates())
+            print(f"The result was a... {result}")
+            if result != "HIT":
+                print("You have another opportunity in this round.")
+                inning += 1
+        else:
+            print("The enemy is attacking.")
+            result = machine.attack(user, machine.attack_coordinates())
+            print(f"The result of enemy's attack was a... {result}")
+            if result != "HIT":
+                print("The enemy has another opportunity in this round.")
+                inning += 1
+        round += 1
+    print("The game is over.")
     if user == False:
-        print("Machine wins!")
+        print("You were defeated.")
     elif machine == False:
-        print("User wins!")
+        print("YOU WON!!!")
 
 if __name__ == "__main__":
     main()
