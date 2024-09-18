@@ -7,12 +7,12 @@
     Review raised errors 
     Check coordinates input
     Consider if self.sunk is necessary
-Move ship status checking to Gameboard, and clarify the __bool__ method.
+    Move ship status checking to Gameboard, and clarify the __bool__ method.
     Refactor attack to avoid recursion.
     Additionally, streamline the input_ships validation process.
 Beauty up the output in terminal
     Simplify the game loop and remove the redundant stage variable.
-Create a class function in Player to receive coordinates
+    Create a class function in Player to receive coordinates
 """
 
 import random
@@ -21,11 +21,11 @@ class Ship():
     def __init__(self, coordinates, length):
         self.coordinates = coordinates
         self.length = length
+        self.sunk = True
     def __iter__(self):
         return iter(self.coordinates)
-    def __bool__(self, grid): 
-        if all(grid[x][y] == "X" for x, y in self.coordinates): return False
-        else: return True
+    def __bool__(self): 
+        return self.sunk
         
 class Two_Long(Ship):
     def __init__(self, coordinates):
@@ -48,15 +48,17 @@ class Gameboard():
     def __str__(self):
         own_grid = [self.own_grid[i] for i in range(len(self.own_grid))]
         opp_grid = [self.opp_grid[i] for i in range(len(self.opp_grid))]
-        return own_grid, opp_grid
-    def place_ship(self):
-        for ship in self.own_ships:
-            x, y = ship
+        return (own_grid, opp_grid) ###
+    def place_ship(self, ship):
+        for x, y in ship.coordinates:
+            if not (0 <= x < 10 and 0 <= y < 10):
+                raise ValueError("Ship coordinates out of bounds.")
+            if self.own_grid[x][y] != 0:
+                raise ValueError("Ship placement overlaps with another ship.")
             self.own_grid[x][y] = 1
-    def receive_attack(self, position):
+    def receive_attack(self, position): 
         x, y = position
-        if x not in range(0,9) and y not in range(0, 9): raise ValueError(...)
-        elif position == "X": return "ALREADY HITTED"
+        if self.own_grid[x][y] == "X": return "ALREADY HITTED"
         elif self.own_grid[x][y] == 1:
             self.own_grid[x][y] = "X"
             self.opp_grid[x][y] = "X"
@@ -65,6 +67,9 @@ class Gameboard():
             self.own_grid[x][y] = "O"
             self.opp_grid[x][y] = "O"
             return "MISS"
+    def sunk_ships(self, ship): 
+        if all(self.own_grid[x][y] == "X" for x, y in ship.coordinates): return False
+        else: return True
 
 class Player():
     def __init__(self, player = 0): # 0 is user | 1 for machine
@@ -89,7 +94,7 @@ class Player():
          for ship in [Two_Long, Three_Long, Three_Long, Four_Long, Five_Long]:
             print(f"Placing {ship.__name__}:")
             x, y = self.get_coordinate()
-            orientation = int(input("Enter orientation (0 for horizontal, 1 for vertical): ")) if self.player else orientation = random.randint(0,1) # Check input
+            orientation = random.randint(0,1) if self.player else int(input("Enter orientation (0 for horizontal, 1 for vertical): "))
             delta_x, delta_y = (1, 0) if orientation == 0 else (0, 1)
             coordinates = [(x + i * delta_x, y + i * delta_y) for i in range(ship.length)]
 
@@ -100,7 +105,7 @@ class Player():
                 elif any((x + i * delta_x > 9 or y + i * delta_y > 9) for i in range(ship.length)):
                     print(...)
                     continue
-                elif set(coordinates).intersection(set(self.ships)):
+                elif set(coordinates).intersection(set(coord for ship in self.ships for coord in ship.coordinates)):
                     print(...)
                     continue
                 else: break
@@ -122,8 +127,12 @@ class Player():
         result = opponent.grid.receive_attack(coordinates)
         return result
     def __bool__(self):
-        if True in self.ships: return True
-        else: return False
+        for ship in self.ships:
+            ship.sunk = self.grid.sunk_ships(ship)
+        if all(ship.sunk for ship in self.ships): return False
+        else: return True
+
+
 
 def main():
     user = Player()
@@ -133,22 +142,17 @@ def main():
     machine.input_ships()
 
     while user and machine :
-        round = 1
+        inning = 1
+        while user and machine:
+            if inning % 2 != 0:  # User's turn
+                result = user.attack(machine, user.attack_coordinates())
+                if result != "HIT":
+                    inning += 1
+            else:  # Machine's turn
+                result = machine.attack(user, machine.attack_coordinates())
+                if result != "HIT":
+                    inning += 1
 
-        if round % 2 != 0: 
-            while True:
-                result = user.attack(machine, (user.attack_coordinates()))
-                for ship in machine.ships: ###
-                    ship.__bool__(machine.grid.own_grid)
-                if not result == "HIT": break
-        else: 
-            while True:
-                machine.attack(user, machine.attack_coordinates())
-                for ship in user.ships:
-                    ship.__bool__(user.grid.own_grid)
-                if not result == "HIT": break
-
-        round += 1
 
     if user == False:
         print("Machine wins!")
