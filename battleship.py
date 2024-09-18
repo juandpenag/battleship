@@ -5,51 +5,42 @@ class Ship():
         self.coordinates = coordinates
         self.length = length
         self.sunk = False
-    def __bool__(self): 
+    def __bool__(self):
         return self.sunk
-        
-class Two_Long(Ship):
-    def __init__(self, coordinates):
-        super().__init__(coordinates, 2)
-class Three_Long(Ship):
-    def __init__(self, coordinates):
-        super().__init__(coordinates, 3)
-class Four_Long(Ship):
-    def __init__(self, coordinates):
-        super().__init__(coordinates, 4)
-class Five_Long(Ship):
-    def __init__(self, coordinates):
-        super().__init__(coordinates, 5)
 
 class Gameboard():
     def __init__(self, ships):
-        self.own_grid = [[0 for j in range(10)] for i in range(10)]
-        self.opp_grid = [[0 for j in range(10)] for i in range(10)]
+        self.own_grid = [["0" for j in range(10)] for i in range(10)]
+        self.opp_grid = [["0" for j in range(10)] for i in range(10)]
         self.own_ships = ships
+    def display_own_grid(self):
+        own_grid = '\n'.join(' '.join(str(cell) for cell in row) for row in self.own_grid) ###
+        return f"Your grid:\n{own_grid}\n"
+    def display_opp_grid(self):
+        opp_grid = '\n'.join(' '.join(str(cell) for cell in row) for row in self.opp_grid) ###
+        return f"Opponent's grid:\n{opp_grid}\n"
     def __str__(self):
-        own_grid = '\n'.join(' '.join(str(cell) for cell in row) for row in self.own_grid)
-        opp_grid = '\n'.join(' '.join(str(cell) for cell in row) for row in self.opp_grid)
-        return f"Your grid:\n{own_grid}\n\nOpponent's grid:\n{opp_grid}"
+        return f"{self.display_own_grid}{self.display_opp_grid}"
     def place_ship(self, ship):
         for x, y in ship.coordinates:
             if not (0 <= x < 10 and 0 <= y < 10):
                 raise ValueError("Ship coordinates out of bounds.")
-            if self.own_grid[x][y] != 0:
+            if self.own_grid[x][y] != "0":
                 raise ValueError("Ship placement overlaps with another ship.")
-            self.own_grid[x][y] = 1
-    def receive_attack(self, position): 
+            self.own_grid[x][y] = 8
+    def receive_attack(self, position, attacker):
         x, y = position
-        if self.own_grid[x][y] == "X": return "ALREADY HITTED"
+        if (self.own_grid[x][y] == "H") or (self.own_grid == "M"): return "ALREADY HITTED"
         elif self.own_grid[x][y] == 1:
-            self.own_grid[x][y] = "X"
-            self.opp_grid[x][y] = "X"
+            self.own_grid[x][y] = "H"
+            attacker[x][y] = "H"
             return "HIT"
-        else: 
-            self.own_grid[x][y] = "O"
-            self.opp_grid[x][y] = "O"
+        else:
+            self.own_grid[x][y] = "M"
+            attacker[x][y] = "M"
             return "MISS"
-    def check_sunk_status(self, ship): 
-        if all(self.own_grid[x][y] == "X" for x, y in ship.coordinates): return True
+    def check_sunk_status(self, ship):
+        if all(self.own_grid[x][y] == "H" for x, y in ship.coordinates): return True
         else: return False
 
 class Player():
@@ -59,69 +50,75 @@ class Player():
         self.grid = Gameboard(self.ships)
         self.attack_record = []
     def get_coordinate(self):
-        if self.player: 
-            x, y = random.randint(0,9), random.randint(0,9)
-        else: # Add 
+        if self.player:
+            x, y = random.randint(1,10), random.randint(1,10)
+            return x, y
+        else: # Add
             while True:
-                x = int(input("Enter starting x-coordinate (1-10): ")) - 1
-                y = int(input("Enter starting y-coordinate (1-10): ")) - 1
-                if (not (x in range(0, 9)) or not (y in range(0, 9))): continue
-                else: return x, y
-    def place_ships(self): 
-        for ship in self.ships:
-            self.grid.place_ship(ship) 
-    def input_ships(self): 
-         for ship in [Two_Long, Three_Long, Three_Long, Four_Long, Five_Long]:
-            print(f"Placing {ship.__name__}:")
+                x = int(input("Enter starting x-coordinate (1-10): "))
+                y = int(input("Enter starting y-coordinate (1-10): "))
+                if (not (x in range(1, 10)) or not (y in range(1, 10))): continue
+                else: return x - 1, y - 1
+    def input_ships(self):
+         for ship_length in [2, 3, 3, 4, 5]:
+            print(f"Placing ship of length {ship_length}:")
             while True:
-                
+
                 while True:
                     orientation = random.randint(0,1) if self.player else int(input("Enter orientation (0 for horizontal, 1 for vertical): "))
                     if orientation in [0, 1]:
                         break
-                    else: 
+                    else:
                         print("Invalid orientation value. Try again.")
                         continue
-                    
+
                 x, y = self.get_coordinate()
                 if (not (x in range(0, 10)) or not (y in range(0, 10))): ###
                     print("Given coordinates out of bounds. Try again.")
                     continue
-            
+
                 delta_x, delta_y = (1, 0) if orientation == 0 else (0, 1)
-                if x + (ship.length - 1) * delta_x >= 10 or y + (ship.length - 1) * delta_y >= 10:
+                if x + (ship_length - 1) * delta_x >= 10 or y + (ship_length - 1) * delta_y >= 10:
                     print("Ship placement goes out of bounds. Try again.")
                     continue
 
-                coordinates = [(x + i * delta_x, y + i * delta_y) for i in range(ship.length)]
-                    
-                if any((x + i * delta_x, y + i * delta_y) in [(coord[0], coord[1]) for ship in self.ships for coord in ship.coordinates] for i in range(ship.length)):
+                coordinates = [(x + i * delta_x, y + i * delta_y) for i in range(ship_length)]
+
+                if any((x + i * delta_x, y + i * delta_y) in [(coord[0], coord[1]) for ship in self.ships for coord in ship.coordinates] for i in range(ship_length)):
                     print("Ship placement overlaps with another ship. Try again.")
                     continue
 
                 try:
-                    ship_input = ship(coordinates)
+                    ship_input = Ship(coordinates, ship_length)
                     self.ships.append(ship_input)
+                    self.grid.place_ship(ship_input)
+
+                    print("Your battlefield: ")
+                    for i in self.grid.own_grid:
+                        print(i)
+                    print("\n")
+
                     break
                 except ValueError as e:
                     print(f"Error placing ship: {e}")
-    def attack_coordinates(self): 
+
+    def attack_coordinates(self):
         while True:
             x, y = self.get_coordinate()
-            if (x, y) in self.attack_record: 
+            if (x, y) in self.attack_record:
                 print("You already attacked there. Try again.")
                 continue
-            else: 
+            else:
                 self.attack_record.append((x, y))
                 return x, y
-    def attack(self, opponent, coordinates): 
-        result = opponent.grid.receive_attack(coordinates)
+    def attack(self, defender, coordinates): ###
+        result = defender.grid.receive_attack(coordinates, self.grid.opp_grid)
         return result
     def __bool__(self):
         for ship in self.ships:
             ship.sunk = self.grid.check_sunk_status(ship)
-        if all(ship.sunk for ship in self.ships): return True
-        else: return False
+        if all(ship.sunk == True for ship in self.ships): return False
+        else: return True
 
 def main():
     print("This is BATTLESHIP! recreated in Python.")
@@ -131,26 +128,33 @@ def main():
     machine.input_ships()
 
     inning = 1
-    round = 1
     while user and machine:
-        print(f"Round {round}")
+
         if inning % 2 != 0:
+            print("Your battlefield: \n")
+            for i in user.grid.own_grid:
+                print(i)
+            print("Opponent's battlefield accordint to your attacks: \n")
+            for i in user.grid.opp_grid:
+                print(i)
             print(user.grid)
-            print("Attack!")
+
+            print("ATTACK!")
             result = user.attack(machine, user.attack_coordinates())
             print(f"The result was a... {result}")
-            if result != "HIT":
-                print("You have another opportunity in this round.")
-                inning += 1
+            if result == "HIT":
+                print("You have another opportunity.")
+                continue
+            else: inning += 1
         else:
-            print("The enemy is attacking.")
+            print("The enemy is attacking...")
             result = machine.attack(user, machine.attack_coordinates())
             print(f"The result of enemy's attack was a... {result}")
-            if result != "HIT":
-                print("The enemy has another opportunity in this round.")
-                inning += 1
-        round += 1
-    print("The game is over.")
+            if result == "HIT":
+                print("The enemy has another opportunity.")
+                continue
+            else: inning += 1
+    print("The game is over. The enemy won.")
     if user == False:
         print("You were defeated.")
     elif machine == False:
@@ -158,3 +162,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# YES
