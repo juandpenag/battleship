@@ -27,11 +27,10 @@ class Gameboard():
                 raise ValueError("Ship coordinates out of bounds.")
             if self.own_grid[x][y] != "0":
                 raise ValueError("Ship placement overlaps with another ship.")
-            self.own_grid[x][y] = 8
+            self.own_grid[x][y] = 1
     def receive_attack(self, position, attacker):
         x, y = position
-        if (self.own_grid[x][y] == "H") or (self.own_grid == "M"): return "ALREADY HITTED"
-        elif self.own_grid[x][y] == 1:
+        if self.own_grid[x][y] == 1:
             self.own_grid[x][y] = "H"
             attacker[x][y] = "H"
             return "HIT"
@@ -55,13 +54,13 @@ class Player():
             return x, y
         else: # Add
             while True:
-                x = int(input("Enter starting x-coordinate (1-10): "))
-                y = int(input("Enter starting y-coordinate (1-10): "))
+                x = int(input("Enter x-coordinate (1-10): "))
+                y = int(input("Enter y-coordinate (1-10): "))
                 if (not (x in range(1, 10)) or not (y in range(1, 10))): continue
                 else: return x - 1, y - 1
     def input_ships(self):
          for ship_length in [2, 3, 3, 4, 5]:
-            print(f"Placing ship of length {ship_length}:")
+            print(f"Placing ship of length {ship_length}: \n")
             while True:
 
                 while True:
@@ -69,23 +68,23 @@ class Player():
                     if orientation in [0, 1]:
                         break
                     else:
-                        print("Invalid orientation value. Try again.")
+                        print("Invalid orientation value. Try again.\n")
                         continue
 
                 x, y = self.get_coordinate()
                 if (not (x in range(0, 10)) or not (y in range(0, 10))): ###
-                    print("Given coordinates out of bounds. Try again.")
+                    print("Given coordinates out of bounds. Try again.\n")
                     continue
 
                 delta_x, delta_y = (1, 0) if orientation == 0 else (0, 1)
                 if x + (ship_length - 1) * delta_x >= 10 or y + (ship_length - 1) * delta_y >= 10:
-                    print("Ship placement goes out of bounds. Try again.")
+                    print("Ship placement goes out of bounds. Try again.\n")
                     continue
 
                 coordinates = [(x + i * delta_x, y + i * delta_y) for i in range(ship_length)]
 
                 if any((x + i * delta_x, y + i * delta_y) in [(coord[0], coord[1]) for ship in self.ships for coord in ship.coordinates] for i in range(ship_length)):
-                    print("Ship placement overlaps with another ship. Try again.")
+                    print("Ship placement overlaps with another ship. Try again.\n")
                     continue
 
                 try:
@@ -93,7 +92,7 @@ class Player():
                     self.ships.append(ship_input)
                     self.grid.place_ship(ship_input)
 
-                    print("Your battlefield: ")
+                    print("Your battlefield: \n")
                     for i in self.grid.own_grid:
                         print(i)
                     print("\n")
@@ -106,7 +105,7 @@ class Player():
         while True:
             x, y = self.get_coordinate()
             if (x, y) in self.attack_record:
-                print("You already attacked there. Try again.")
+                print("You already attacked there. Try again.\n")
                 continue
             else:
                 self.attack_record.append((x, y))
@@ -121,7 +120,7 @@ class Player():
         else: return True
 
 def main():
-    print("This is BATTLESHIP! recreated in Python.")
+    print("This is BATTLESHIP! recreated in Python.\n")
     user, machine = Player(), Player(1)
 
     user.input_ships()
@@ -137,21 +136,20 @@ def main():
             print("Opponent's battlefield accordint to your attacks: \n")
             for i in user.grid.opp_grid:
                 print(i)
-            print(user.grid)
 
-            print("ATTACK!")
+            print("ATTACK!\n")
             result = user.attack(machine, user.attack_coordinates())
             print(f"The result was a... {result}")
             if result == "HIT":
-                print("You have another opportunity.")
+                print("You have another opportunity.\n")
                 continue
             else: inning += 1
         else:
-            print("The enemy is attacking...")
+            print("The enemy is attacking...\n")
             result = machine.attack(user, machine.attack_coordinates())
-            print(f"The result of enemy's attack was a... {result}")
+            print(f"The result of enemy's attack was a... {result}\n")
             if result == "HIT":
-                print("The enemy has another opportunity.")
+                print("The enemy has another opportunity.\n")
                 continue
             else: inning += 1
     print("The game is over. The enemy won.")
