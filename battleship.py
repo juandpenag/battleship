@@ -35,8 +35,8 @@ class Gameboard():
         x, y = position
 
         if self.own_grid[y][x] == 1: # If hitted
-            self.own_grid[x][y] = "H"
-            attacker[x][y] = "H"
+            self.own_grid[y][x] = "H"
+            attacker[y][x] = "H"
             return "HIT"
         else: # if not hitted
             self.own_grid[y][x] = "M"
